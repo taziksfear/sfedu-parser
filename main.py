@@ -1,6 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import time
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+api_url = os.getenv('api_url')
 
 def scrape_news_page(news_id):
     url = f'https://sfedu.ru/press-center/news/{news_id}/'
@@ -24,19 +29,29 @@ def scrape_page(url):
 
     content_wrapper = soup.find('div', class_='content_wrapper')
     if not content_wrapper:
-        print(f'No content found on the page: {url}')
+        print(f'не найденно на странице: {url}')
         return ''
 
     content = content_wrapper.get_text(separator='\n', strip=True)
     return content
+
+def send_to_api(data):
+    try:
+        response = requests.post(api_url, json=data)
+        response.raise_for_status()
+        print(f"все отправленно на апи: {data}")
+    except requests.exceptions.RequestException as e:
+        print(f"ошибка отправки: {e}")
+
 def main():
     news_id = 77166
 
     while True:
         news = scrape_news_page(news_id)
         if news:
-            print("\Новостные страницы:")
+            print("\nНовостные страницы:")
             print(f"ID: {news['id']}, Title: {news['title']}, Content: {news['content']}")
+            send_to_api(news)
             news_id += 1
         else:
             print(f'не найденна страница новостей под ID:{news_id}')
@@ -58,5 +73,6 @@ def main():
                 print(f'не найденно информации на странице: {name}')
 
         time.sleep(86400)
+
 if __name__ == '__main__':
     main()
